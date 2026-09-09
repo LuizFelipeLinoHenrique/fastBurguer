@@ -6,7 +6,7 @@ export type Category =
 
 export type PaymentMethod = "PIX" | "Cartão" | "Dinheiro";
 
-export type OrderStatus = "Preparando" | "A caminho" | "Entregue";
+export type OrderStatus = "Em preparo" | "Entregue";
 
 export type Product = {
     id: string;
@@ -20,4 +20,17 @@ export type Product = {
 export type CartItem = {
     product: Product;
     quantity: number;
+};
+
+export type Order = {
+    id: string;
+    orderNumber: string;
+    items: CartItem[];
+    subtotal: number;
+    shipping: number;
+    total: number;
+    address: string;
+    paymentMethod: PaymentMethod;
+    createdAt: number; // Date.now() timestamp
+    status: OrderStatus;
 };

@@ -8,51 +8,47 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
+import { useOrders } from "../context/OrdersContext";
 import { RootStackParamList } from "../navigation/RootNavigator";
-import {
-    colors,
-    fontSize,
-    radius,
-    spacing,
-} from "../theme";
+import { colors, fontSize, radius, spacing } from "../theme";
 import { OrderStatus } from "../types";
 
-type Props = NativeStackScreenProps<
-    RootStackParamList,
-    "OrderStatus"
->;
+type Props = NativeStackScreenProps<RootStackParamList, "OrderStatus">;
 
-const statuses: OrderStatus[] = [
-    "Preparando",
-    "A caminho",
-    "Entregue",
-];
+const statuses: OrderStatus[] = ["Em preparo", "Entregue"];
 
-export function OrderStatusScreen({
-    navigation,
-    route,
-}: Props) {
-    const [currentStatus, setCurrentStatus] =
-        useState<OrderStatus>("Preparando");
+export function OrderStatusScreen({ navigation, route }: Props) {
+    const { getOrderById, getEffectiveStatus, getTimeRemainingSeconds } =
+        useOrders();
+    const [, setTick] = useState(0);
 
+    const orderId = route.params.orderId || route.params.orderNumber;
+    const order = getOrderById(orderId);
+
+    // Refresh every second for real-time status update & countdown timer
     useEffect(() => {
-        const firstTimer = setTimeout(() => {
-            setCurrentStatus("A caminho");
-        }, 5000);
+        const interval = setInterval(() => {
+            setTick((t) => t + 1);
+        }, 1000);
 
-        const secondTimer = setTimeout(() => {
-            setCurrentStatus("Entregue");
-        }, 10000);
-
-        return () => {
-            clearTimeout(firstTimer);
-            clearTimeout(secondTimer);
-        };
+        return () => clearInterval(interval);
     }, []);
 
-    const currentIndex = statuses.indexOf(currentStatus);
+    const effectiveStatus = order
+        ? getEffectiveStatus(order)
+        : ("Em preparo" as OrderStatus);
+
+    const timeRemainingSeconds = order ? getTimeRemainingSeconds(order) : 120;
+    const isPreparing = effectiveStatus === "Em preparo";
+
+    function formatTimer(seconds: number): string {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    }
 
     function handleBackToHome() {
         navigation.reset({
@@ -61,50 +57,146 @@ export function OrderStatusScreen({
         });
     }
 
+    function handleGoToOrders() {
+        navigation.navigate("Orders");
+    }
+
     return (
         <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                <View style={styles.successIcon}>
-                    <Text style={styles.check}>✓</Text>
+                <View
+                    style={[
+                        styles.statusHeaderIcon,
+                        isPreparing
+                            ? styles.statusHeaderIconPreparing
+                            : styles.statusHeaderIconDelivered,
+                    ]}
+                >
+                    <Ionicons
+                        name={
+                            isPreparing
+                                ? "fast-food-outline"
+                                : "checkmark-done-circle-outline"
+                        }
+                        size={52}
+                        color={colors.white}
+                    />
                 </View>
 
-                <Text style={styles.title}>Pedido confirmado!</Text>
-
-                <Text style={styles.subtitle}>
-                    Seu pedido foi recebido e já está sendo preparado.
+                <Text style={styles.title}>
+                    {isPreparing
+                        ? "Pedido em Preparo!"
+                        : "Pedido Entregue! 🎉"}
                 </Text>
 
+                <Text style={styles.subtitle}>
+                    {isPreparing
+                        ? "Seu hambúrguer está sendo preparado com muito carinho."
+                        : "Seu pedido foi entregue. Bom apetite!"}
+                </Text>
+
+                {/* Countdown Box */}
+                {isPreparing && (
+                    <View style={styles.timerBox}>
+                        <Ionicons
+                            name="time-outline"
+                            size={22}
+                            color="#D97706"
+                        />
+                        <Text style={styles.timerLabel}>Tempo para entrega:</Text>
+                        <Text style={styles.timerValue}>
+                            {formatTimer(timeRemainingSeconds)}
+                        </Text>
+                    </View>
+                )}
+
+                {/* Order Summary Card */}
                 <View style={styles.orderCard}>
-                    <Text style={styles.orderLabel}>Número do pedido</Text>
+                    <View style={styles.orderHeaderRow}>
+                        <View>
+                            <Text style={styles.orderLabel}>
+                                Número do pedido
+                            </Text>
+                            <Text style={styles.orderNumber}>
+                                #{order?.orderNumber || route.params.orderNumber}
+                            </Text>
+                        </View>
 
-                    <Text style={styles.orderNumber}>
-                        #{route.params.orderNumber}
-                    </Text>
+                        <Text style={styles.totalValueHeader}>
+                            R${" "}
+                            {(order?.total || route.params.total)
+                                .toFixed(2)
+                                .replace(".", ",")}
+                        </Text>
+                    </View>
 
-                    <Text style={styles.total}>
-                        Total: R${" "}
-                        {route.params.total.toFixed(2).replace(".", ",")}
-                    </Text>
+                    {order && (
+                        <>
+                            <View style={styles.divider} />
+                            <Text style={styles.sectionHeading}>
+                                Itens do Pedido:
+                            </Text>
+                            <View style={styles.itemsList}>
+                                {order.items.map((item) => (
+                                    <View
+                                        key={item.product.id}
+                                        style={styles.itemRow}
+                                    >
+                                        <Text style={styles.itemName}>
+                                            {item.quantity}x {item.product.name}
+                                        </Text>
+                                        <Text style={styles.itemPrice}>
+                                            R${" "}
+                                            {(
+                                                item.product.price *
+                                                item.quantity
+                                            )
+                                                .toFixed(2)
+                                                .replace(".", ",")}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+
+                            <View style={styles.divider} />
+                            <Text style={styles.infoLine}>
+                                📍 <Text style={styles.infoBold}>Endereço:</Text>{" "}
+                                {order.address}
+                            </Text>
+                            <Text style={styles.infoLine}>
+                                💳 <Text style={styles.infoBold}>Pagamento:</Text>{" "}
+                                {order.paymentMethod}
+                            </Text>
+                        </>
+                    )}
                 </View>
 
+                {/* Status Timeline */}
                 <View style={styles.statusCard}>
-                    {statuses.map((status, index) => {
-                        const completed = index <= currentIndex;
+                    <Text style={styles.sectionHeading}>Status do Pedido:</Text>
+
+                    {statuses.map((statusName, index) => {
+                        const isCompleted =
+                            index === 0
+                                ? true
+                                : effectiveStatus === "Entregue";
+
+                        const isCurrent = effectiveStatus === statusName;
 
                         return (
-                            <View key={status} style={styles.statusRow}>
+                            <View key={statusName} style={styles.statusRow}>
                                 <View style={styles.statusIndicator}>
                                     <View
                                         style={[
                                             styles.circle,
-                                            completed &&
+                                            isCompleted &&
                                                 styles.circleCompleted,
                                         ]}
                                     >
-                                        {completed && (
+                                        {isCompleted && (
                                             <Text style={styles.circleCheck}>
                                                 ✓
                                             </Text>
@@ -115,7 +207,7 @@ export function OrderStatusScreen({
                                         <View
                                             style={[
                                                 styles.line,
-                                                index < currentIndex &&
+                                                effectiveStatus === "Entregue" &&
                                                     styles.lineCompleted,
                                             ]}
                                         />
@@ -126,16 +218,18 @@ export function OrderStatusScreen({
                                     <Text
                                         style={[
                                             styles.statusText,
-                                            completed &&
+                                            isCompleted &&
                                                 styles.statusTextCompleted,
                                         ]}
                                     >
-                                        {status}
+                                        {statusName}
                                     </Text>
 
-                                    {index === currentIndex && (
+                                    {isCurrent && (
                                         <Text style={styles.currentText}>
-                                            Status atual
+                                            {statusName === "Em preparo"
+                                                ? "Em andamento (2 min)"
+                                                : "Finalizado"}
                                         </Text>
                                     )}
                                 </View>
@@ -144,13 +238,32 @@ export function OrderStatusScreen({
                     })}
                 </View>
 
-                <TouchableOpacity
-                    style={styles.button}
-                    onPress={handleBackToHome}
-                    activeOpacity={0.8}
-                >
-                    <Text style={styles.buttonText}>Voltar para o início</Text>
-                </TouchableOpacity>
+                <View style={styles.buttonsContainer}>
+                    <TouchableOpacity
+                        style={styles.buttonOutline}
+                        onPress={handleGoToOrders}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons
+                            name="receipt-outline"
+                            size={20}
+                            color={colors.primary}
+                        />
+                        <Text style={styles.buttonOutlineText}>
+                            Ver meus pedidos
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.button}
+                        onPress={handleBackToHome}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={styles.buttonText}>
+                            Voltar para o início
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
         </SafeAreaView>
     );
@@ -169,19 +282,20 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.xxl,
     },
 
-    successIcon: {
+    statusHeaderIcon: {
         width: 90,
         height: 90,
         borderRadius: 45,
-        backgroundColor: colors.green,
         alignItems: "center",
         justifyContent: "center",
     },
 
-    check: {
-        color: colors.white,
-        fontSize: 50,
-        fontWeight: "800",
+    statusHeaderIconPreparing: {
+        backgroundColor: "#D97706",
+    },
+
+    statusHeaderIconDelivered: {
+        backgroundColor: colors.green,
     },
 
     title: {
@@ -189,13 +303,37 @@ const styles = StyleSheet.create({
         fontSize: fontSize.xl,
         fontWeight: "900",
         marginTop: spacing.lg,
+        textAlign: "center",
     },
 
     subtitle: {
         color: colors.grayDark,
         textAlign: "center",
         lineHeight: 21,
-        marginTop: spacing.sm,
+        marginTop: spacing.xs,
+    },
+
+    timerBox: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#FEF3C7",
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: radius.md,
+        marginTop: spacing.md,
+        gap: 6,
+    },
+
+    timerLabel: {
+        color: "#92400E",
+        fontWeight: "700",
+        fontSize: 14,
+    },
+
+    timerValue: {
+        color: "#B45309",
+        fontWeight: "900",
+        fontSize: 16,
     },
 
     orderCard: {
@@ -203,26 +341,82 @@ const styles = StyleSheet.create({
         backgroundColor: colors.white,
         borderRadius: radius.lg,
         padding: spacing.lg,
-        marginTop: spacing.xl,
+        marginTop: spacing.lg,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 2,
+    },
+
+    orderHeaderRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
         alignItems: "center",
     },
 
     orderLabel: {
         color: colors.grayDark,
-        fontSize: 13,
+        fontSize: 12,
     },
 
     orderNumber: {
         color: colors.primary,
-        fontSize: 25,
+        fontSize: 22,
         fontWeight: "900",
+        marginTop: 2,
+    },
+
+    totalValueHeader: {
+        color: colors.black,
+        fontSize: 20,
+        fontWeight: "900",
+    },
+
+    divider: {
+        height: 1,
+        backgroundColor: colors.grayLight,
+        marginVertical: spacing.md,
+    },
+
+    sectionHeading: {
+        color: colors.black,
+        fontSize: 15,
+        fontWeight: "800",
+        marginBottom: spacing.xs,
+    },
+
+    itemsList: {
+        gap: 6,
         marginTop: 4,
     },
 
-    total: {
+    itemRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+    },
+
+    itemName: {
+        color: colors.black,
+        fontSize: 14,
+    },
+
+    itemPrice: {
+        color: colors.grayDark,
+        fontSize: 14,
+        fontWeight: "600",
+    },
+
+    infoLine: {
+        color: colors.grayDark,
+        fontSize: 13,
+        marginTop: 4,
+        lineHeight: 19,
+    },
+
+    infoBold: {
         color: colors.black,
         fontWeight: "700",
-        marginTop: spacing.sm,
     },
 
     statusCard: {
@@ -231,11 +425,17 @@ const styles = StyleSheet.create({
         borderRadius: radius.lg,
         padding: spacing.lg,
         marginTop: spacing.md,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 2,
     },
 
     statusRow: {
         flexDirection: "row",
-        minHeight: 58,
+        minHeight: 52,
+        marginTop: spacing.xs,
     },
 
     statusIndicator: {
@@ -297,6 +497,31 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
 
+    buttonsContainer: {
+        width: "100%",
+        marginTop: spacing.lg,
+        gap: spacing.sm,
+    },
+
+    buttonOutline: {
+        width: "100%",
+        height: 52,
+        borderRadius: radius.md,
+        borderWidth: 1.5,
+        borderColor: colors.primary,
+        backgroundColor: colors.white,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+    },
+
+    buttonOutlineText: {
+        color: colors.primary,
+        fontSize: 16,
+        fontWeight: "800",
+    },
+
     button: {
         width: "100%",
         height: 54,
@@ -304,7 +529,6 @@ const styles = StyleSheet.create({
         backgroundColor: colors.primary,
         alignItems: "center",
         justifyContent: "center",
-        marginTop: spacing.lg,
     },
 
     buttonText: {

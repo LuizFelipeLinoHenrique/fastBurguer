@@ -118,7 +118,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
                     <MenuItem
                         icon="receipt-outline"
                         title="Meus pedidos"
-                        onPress={() => showComingSoon("Meus pedidos")}
+                        onPress={() => navigation.navigate("Orders")}
                     />
 
                     <MenuItem

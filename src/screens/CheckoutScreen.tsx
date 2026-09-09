@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useCart } from "../context/CartContext";
+import { useOrders } from "../context/OrdersContext";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import {
     colors,
@@ -39,6 +40,7 @@ const paymentMethods: PaymentMethod[] = [
 export function CheckoutScreen({ navigation }: Props) {
     const insets = useSafeAreaInsets();
     const { items, total, subtotal, shipping, clearCart } = useCart();
+    const { addOrder } = useOrders();
 
     const [address, setAddress] = useState("");
     const [payment, setPayment] = useState<PaymentMethod>("PIX");
@@ -75,13 +77,25 @@ export function CheckoutScreen({ navigation }: Props) {
         setTimeout(() => {
             const orderNumber = `FB${Date.now().toString().slice(-6)}`;
 
+            const createdOrder = addOrder({
+                orderNumber,
+                items: [...items],
+                subtotal,
+                shipping,
+                total,
+                address: address.trim(),
+                paymentMethod: payment,
+                createdAt: Date.now(),
+            });
+
             clearCart();
 
             setLoading(false);
 
             navigation.replace("OrderStatus", {
-                orderNumber,
-                total,
+                orderId: createdOrder.id,
+                orderNumber: createdOrder.orderNumber,
+                total: createdOrder.total,
             });
         }, 800);
     }
