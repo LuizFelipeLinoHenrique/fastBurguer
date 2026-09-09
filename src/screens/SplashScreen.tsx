@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect } from "react";
 import {
     StyleSheet,
@@ -15,13 +16,38 @@ type Props = NativeStackScreenProps<
     "Splash"
 >;
 
+const SESSION_KEY = "@fastburguer_session";
+
 export function SplashScreen({ navigation }: Props) {
     useEffect(() => {
-        const timer = setTimeout(() => {
-            navigation.replace("Auth");
-        }, 2500);
+        let isMounted = true;
 
-        return () => clearTimeout(timer);
+        async function checkAuth() {
+            try {
+                const session = await AsyncStorage.getItem(SESSION_KEY);
+                await new Promise((resolve) => setTimeout(resolve, 1800));
+
+                if (!isMounted) {
+                    return;
+                }
+
+                if (session) {
+                    navigation.replace("MainTabs");
+                } else {
+                    navigation.replace("Auth");
+                }
+            } catch {
+                if (isMounted) {
+                    navigation.replace("Auth");
+                }
+            }
+        }
+
+        checkAuth();
+
+        return () => {
+            isMounted = false;
+        };
     }, [navigation]);
 
     return (

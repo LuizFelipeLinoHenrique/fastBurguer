@@ -10,11 +10,12 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { useCart } from "../context/CartoonContext";
+import { useCart } from "../context/CartContext";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import {
     colors,
@@ -35,17 +36,24 @@ const paymentMethods: PaymentMethod[] = [
     "Dinheiro",
 ];
 
-export function CheckoutScreen({
-    navigation,
-}: Props) {
-    const { total, clearCart } = useCart();
+export function CheckoutScreen({ navigation }: Props) {
+    const insets = useSafeAreaInsets();
+    const { items, total, subtotal, shipping, clearCart } = useCart();
 
     const [address, setAddress] = useState("");
-    const [payment, setPayment] =
-        useState<PaymentMethod>("PIX");
+    const [payment, setPayment] = useState<PaymentMethod>("PIX");
     const [loading, setLoading] = useState(false);
 
     function handleConfirmOrder() {
+        if (items.length === 0) {
+            Alert.alert(
+                "Carrinho vazio",
+                "Adicione itens ao carrinho antes de finalizar a compra.",
+            );
+            navigation.goBack();
+            return;
+        }
+
         if (!address.trim()) {
             Alert.alert(
                 "Atenção",
@@ -54,10 +62,10 @@ export function CheckoutScreen({
             return;
         }
 
-        if (address.trim().length < 10) {
+        if (address.trim().length < 8) {
             Alert.alert(
                 "Atenção",
-                "Informe um endereço completo.",
+                "Informe um endereço completo com rua e número.",
             );
             return;
         }
@@ -65,8 +73,7 @@ export function CheckoutScreen({
         setLoading(true);
 
         setTimeout(() => {
-            const orderNumber =
-                `FB${Date.now().toString().slice(-6)}`;
+            const orderNumber = `FB${Date.now().toString().slice(-6)}`;
 
             clearCart();
 
@@ -82,15 +89,17 @@ export function CheckoutScreen({
     return (
         <KeyboardAvoidingView
             style={styles.container}
-            behavior={
-                Platform.OS === "ios"
-                    ? "padding"
-                    : undefined
-            }
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-            <View style={styles.header}>
+            <View
+                style={[
+                    styles.header,
+                    { paddingTop: Math.max(insets.top + 8, 24) },
+                ]}
+            >
                 <TouchableOpacity
                     onPress={() => navigation.goBack()}
+                    activeOpacity={0.7}
                 >
                     <Ionicons
                         name="arrow-back"
@@ -99,20 +108,19 @@ export function CheckoutScreen({
                     />
                 </TouchableOpacity>
 
-                <Text style={styles.headerTitle}>
-                    Checkout
-                </Text>
+                <Text style={styles.headerTitle}>Checkout</Text>
 
                 <View style={styles.placeholder} />
             </View>
 
             <ScrollView
-                contentContainerStyle={styles.content}
+                contentContainerStyle={[
+                    styles.content,
+                    { paddingBottom: Math.max(insets.bottom + 20, spacing.xxl) },
+                ]}
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.sectionTitle}>
-                    Endereço de entrega
-                </Text>
+                <Text style={styles.sectionTitle}>Endereço de entrega</Text>
 
                 <TextInput
                     value={address}
@@ -123,9 +131,7 @@ export function CheckoutScreen({
                     style={styles.addressInput}
                 />
 
-                <Text style={styles.sectionTitle}>
-                    Forma de pagamento
-                </Text>
+                <Text style={styles.sectionTitle}>Forma de pagamento</Text>
 
                 <View style={styles.paymentList}>
                     {paymentMethods.map((method) => {
@@ -138,9 +144,7 @@ export function CheckoutScreen({
                                     styles.payment,
                                     selected && styles.paymentSelected,
                                 ]}
-                                onPress={() =>
-                                    setPayment(method)
-                                }
+                                onPress={() => setPayment(method)}
                                 activeOpacity={0.8}
                             >
                                 <View style={styles.paymentLeft}>
@@ -149,8 +153,8 @@ export function CheckoutScreen({
                                             method === "PIX"
                                                 ? "qr-code-outline"
                                                 : method === "Cartão"
-                                                    ? "card-outline"
-                                                    : "cash-outline"
+                                                  ? "card-outline"
+                                                  : "cash-outline"
                                         }
                                         size={23}
                                         color={
@@ -164,7 +168,7 @@ export function CheckoutScreen({
                                         style={[
                                             styles.paymentText,
                                             selected &&
-                                            styles.paymentTextSelected,
+                                                styles.paymentTextSelected,
                                         ]}
                                     >
                                         {method}
@@ -178,9 +182,7 @@ export function CheckoutScreen({
                                     ]}
                                 >
                                     {selected && (
-                                        <View
-                                            style={styles.radioInner}
-                                        />
+                                        <View style={styles.radioInner} />
                                     )}
                                 </View>
                             </TouchableOpacity>
@@ -188,9 +190,7 @@ export function CheckoutScreen({
                     })}
                 </View>
 
-                <Text style={styles.sectionTitle}>
-                    Resumo do pedido
-                </Text>
+                <Text style={styles.sectionTitle}>Resumo do pedido</Text>
 
                 <View style={styles.summary}>
                     <View style={styles.summaryRow}>
@@ -199,28 +199,22 @@ export function CheckoutScreen({
                         </Text>
 
                         <Text style={styles.summaryValue}>
-                            R$ {(total - 5)
-                                .toFixed(2)
-                                .replace(".", ",")}
+                            R$ {subtotal.toFixed(2).replace(".", ",")}
                         </Text>
                     </View>
 
                     <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>
-                            Frete
-                        </Text>
+                        <Text style={styles.summaryLabel}>Frete</Text>
 
                         <Text style={styles.summaryValue}>
-                            R$ 5,00
+                            R$ {shipping.toFixed(2).replace(".", ",")}
                         </Text>
                     </View>
 
                     <View style={styles.divider} />
 
                     <View style={styles.summaryRow}>
-                        <Text style={styles.totalLabel}>
-                            Total
-                        </Text>
+                        <Text style={styles.totalLabel}>Total</Text>
 
                         <Text style={styles.totalValue}>
                             R$ {total.toFixed(2).replace(".", ",")}
@@ -235,11 +229,10 @@ export function CheckoutScreen({
                     ]}
                     onPress={handleConfirmOrder}
                     disabled={loading}
+                    activeOpacity={0.8}
                 >
                     <Text style={styles.buttonText}>
-                        {loading
-                            ? "Confirmando..."
-                            : "Confirmar pedido"}
+                        {loading ? "Confirmando..." : "Confirmar pedido"}
                     </Text>
                 </TouchableOpacity>
             </ScrollView>
@@ -254,9 +247,9 @@ const styles = StyleSheet.create({
     },
 
     header: {
-        height: 90,
+        minHeight: 60,
         paddingHorizontal: spacing.md,
-        paddingTop: 35,
+        paddingBottom: spacing.sm,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
@@ -274,7 +267,6 @@ const styles = StyleSheet.create({
 
     content: {
         padding: spacing.lg,
-        paddingBottom: spacing.xxl,
     },
 
     sectionTitle: {

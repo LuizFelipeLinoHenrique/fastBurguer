@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import {
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
@@ -50,112 +52,107 @@ export function OrderStatusScreen({
         };
     }, []);
 
-    const currentIndex =
-        statuses.indexOf(currentStatus);
+    const currentIndex = statuses.indexOf(currentStatus);
+
+    function handleBackToHome() {
+        navigation.reset({
+            index: 0,
+            routes: [{ name: "MainTabs" }],
+        });
+    }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.successIcon}>
-                <Text style={styles.check}>✓</Text>
-            </View>
+        <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.successIcon}>
+                    <Text style={styles.check}>✓</Text>
+                </View>
 
-            <Text style={styles.title}>
-                Pedido confirmado!
-            </Text>
+                <Text style={styles.title}>Pedido confirmado!</Text>
 
-            <Text style={styles.subtitle}>
-                Seu pedido foi recebido e já está sendo
-                preparado.
-            </Text>
-
-            <View style={styles.orderCard}>
-                <Text style={styles.orderLabel}>
-                    Número do pedido
+                <Text style={styles.subtitle}>
+                    Seu pedido foi recebido e já está sendo preparado.
                 </Text>
 
-                <Text style={styles.orderNumber}>
-                    #{route.params.orderNumber}
-                </Text>
+                <View style={styles.orderCard}>
+                    <Text style={styles.orderLabel}>Número do pedido</Text>
 
-                <Text style={styles.total}>
-                    Total: R${" "}
-                    {route.params.total
-                        .toFixed(2)
-                        .replace(".", ",")}
-                </Text>
-            </View>
+                    <Text style={styles.orderNumber}>
+                        #{route.params.orderNumber}
+                    </Text>
 
-            <View style={styles.statusCard}>
-                {statuses.map((status, index) => {
-                    const completed =
-                        index <= currentIndex;
+                    <Text style={styles.total}>
+                        Total: R${" "}
+                        {route.params.total.toFixed(2).replace(".", ",")}
+                    </Text>
+                </View>
 
-                    return (
-                        <View
-                            key={status}
-                            style={styles.statusRow}
-                        >
-                            <View style={styles.statusIndicator}>
-                                <View
-                                    style={[
-                                        styles.circle,
-                                        completed &&
-                                        styles.circleCompleted,
-                                    ]}
-                                >
-                                    {completed && (
-                                        <Text
-                                            style={styles.circleCheck}
-                                        >
-                                            ✓
-                                        </Text>
+                <View style={styles.statusCard}>
+                    {statuses.map((status, index) => {
+                        const completed = index <= currentIndex;
+
+                        return (
+                            <View key={status} style={styles.statusRow}>
+                                <View style={styles.statusIndicator}>
+                                    <View
+                                        style={[
+                                            styles.circle,
+                                            completed &&
+                                                styles.circleCompleted,
+                                        ]}
+                                    >
+                                        {completed && (
+                                            <Text style={styles.circleCheck}>
+                                                ✓
+                                            </Text>
+                                        )}
+                                    </View>
+
+                                    {index < statuses.length - 1 && (
+                                        <View
+                                            style={[
+                                                styles.line,
+                                                index < currentIndex &&
+                                                    styles.lineCompleted,
+                                            ]}
+                                        />
                                     )}
                                 </View>
 
-                                {index < statuses.length - 1 && (
-                                    <View
+                                <View style={styles.statusTextContainer}>
+                                    <Text
                                         style={[
-                                            styles.line,
-                                            index < currentIndex &&
-                                            styles.lineCompleted,
+                                            styles.statusText,
+                                            completed &&
+                                                styles.statusTextCompleted,
                                         ]}
-                                    />
-                                )}
-                            </View>
-
-                            <View style={styles.statusTextContainer}>
-                                <Text
-                                    style={[
-                                        styles.statusText,
-                                        completed &&
-                                        styles.statusTextCompleted,
-                                    ]}
-                                >
-                                    {status}
-                                </Text>
-
-                                {index === currentIndex && (
-                                    <Text style={styles.currentText}>
-                                        Status atual
+                                    >
+                                        {status}
                                     </Text>
-                                )}
-                            </View>
-                        </View>
-                    );
-                })}
-            </View>
 
-            <TouchableOpacity
-                style={styles.button}
-                onPress={() =>
-                    navigation.replace("MainTabs")
-                }
-            >
-                <Text style={styles.buttonText}>
-                    Voltar para o início
-                </Text>
-            </TouchableOpacity>
-        </View>
+                                    {index === currentIndex && (
+                                        <Text style={styles.currentText}>
+                                            Status atual
+                                        </Text>
+                                    )}
+                                </View>
+                            </View>
+                        );
+                    })}
+                </View>
+
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={handleBackToHome}
+                    activeOpacity={0.8}
+                >
+                    <Text style={styles.buttonText}>Voltar para o início</Text>
+                </TouchableOpacity>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
@@ -163,9 +160,13 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.cream,
+    },
+
+    scrollContent: {
         alignItems: "center",
         paddingHorizontal: spacing.lg,
-        paddingTop: spacing.xxl,
+        paddingTop: spacing.lg,
+        paddingBottom: spacing.xxl,
     },
 
     successIcon: {

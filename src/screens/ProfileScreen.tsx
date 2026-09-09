@@ -2,160 +2,152 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import {
     Alert,
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
+import { CompositeScreenProps } from "@react-navigation/native";
+import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import {
-    CompositeScreenProps,
-} from "@react-navigation/native";
-
-import {
-    BottomTabScreenProps,
-} from "@react-navigation/bottom-tabs";
-
-import {
+    NativeStackNavigationProp,
     NativeStackScreenProps,
 } from "@react-navigation/native-stack";
 
 import { Ionicons } from "@expo/vector-icons";
 
-import {
-    MainTabsParamList,
-} from "../navigation/MainTabs";
+import { MainTabsParamList } from "../navigation/MainTabs";
+import { RootStackParamList } from "../navigation/RootNavigator";
+import { colors, fontSize, radius, spacing } from "../theme";
 
-import {
-    RootStackParamList,
-} from "../navigation/RootNavigator";
+type ProfileScreenProps = CompositeScreenProps<
+    BottomTabScreenProps<MainTabsParamList, "Profile">,
+    NativeStackScreenProps<RootStackParamList>
+>;
 
-import {
-    colors,
-    fontSize,
-    radius,
-    spacing,
-} from "../theme";
-
-type ProfileScreenProps =
-    CompositeScreenProps<
-        BottomTabScreenProps<
-            MainTabsParamList,
-            "Profile"
-        >,
-        NativeStackScreenProps<RootStackParamList>
-    >;
-
-const SESSION_KEY =
-    "@fastburguer_session";
+const SESSION_KEY = "@fastburguer_session";
 
 type Session = {
     email: string;
 };
 
-export function ProfileScreen({
-    navigation,
-}: ProfileScreenProps) {
-    const [email, setEmail] = useState(
-        "cliente@email.com",
-    );
+export function ProfileScreen({ navigation }: ProfileScreenProps) {
+    const [email, setEmail] = useState("cliente@email.com");
 
     useEffect(() => {
         async function loadSession() {
-            const storedSession =
-                await AsyncStorage.getItem(
-                    SESSION_KEY,
-                );
+            try {
+                const storedSession = await AsyncStorage.getItem(SESSION_KEY);
 
-            if (!storedSession) {
-                return;
+                if (!storedSession) {
+                    return;
+                }
+
+                const session = JSON.parse(storedSession) as Session;
+                if (session.email) {
+                    setEmail(session.email);
+                }
+            } catch {
+                // If parse fails, keep default
             }
-
-            const session =
-                JSON.parse(
-                    storedSession,
-                ) as Session;
-
-            setEmail(session.email);
         }
 
         loadSession();
     }, []);
 
     async function handleLogout() {
-        await AsyncStorage.removeItem(
-            SESSION_KEY,
-        );
+        Alert.alert("Sair", "Deseja realmente sair da sua conta?", [
+            { text: "Cancelar", style: "cancel" },
+            {
+                text: "Sair",
+                style: "destructive",
+                onPress: async () => {
+                    await AsyncStorage.removeItem(SESSION_KEY);
+                    const rootNav =
+                        navigation.getParent<
+                            NativeStackNavigationProp<RootStackParamList>
+                        >();
 
-        navigation.replace("Auth");
+                    if (rootNav) {
+                        rootNav.reset({
+                            index: 0,
+                            routes: [{ name: "Auth" }],
+                        });
+                    } else {
+                        navigation.navigate("Auth");
+                    }
+                },
+            },
+        ]);
     }
 
-    function showComingSoon() {
+    function showComingSoon(feature: string) {
         Alert.alert(
-            "Em breve",
-            "Esta funcionalidade será implementada posteriormente.",
+            feature,
+            "Esta funcionalidade estará disponível na próxima atualização.",
         );
     }
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>
-                Perfil
-            </Text>
+        <SafeAreaView style={styles.container} edges={["top"]}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+            >
+                <Text style={styles.title}>Perfil</Text>
 
-            <View style={styles.profileCard}>
-                <View style={styles.avatar}>
-                    <Ionicons
-                        name="person"
-                        size={38}
-                        color={colors.white}
+                <View style={styles.profileCard}>
+                    <View style={styles.avatar}>
+                        <Ionicons
+                            name="person"
+                            size={38}
+                            color={colors.white}
+                        />
+                    </View>
+
+                    <View style={styles.profileInfo}>
+                        <Text style={styles.name}>Cliente Fast</Text>
+                        <Text style={styles.email}>{email}</Text>
+                    </View>
+                </View>
+
+                <View style={styles.menu}>
+                    <MenuItem
+                        icon="receipt-outline"
+                        title="Meus pedidos"
+                        onPress={() => showComingSoon("Meus pedidos")}
+                    />
+
+                    <MenuItem
+                        icon="location-outline"
+                        title="Endereços"
+                        onPress={() => showComingSoon("Endereços")}
+                    />
+
+                    <MenuItem
+                        icon="card-outline"
+                        title="Formas de pagamento"
+                        onPress={() => showComingSoon("Formas de pagamento")}
+                    />
+
+                    <MenuItem
+                        icon="settings-outline"
+                        title="Configurações"
+                        onPress={() => showComingSoon("Configurações")}
+                    />
+
+                    <MenuItem
+                        icon="log-out-outline"
+                        title="Sair"
+                        danger
+                        onPress={handleLogout}
                     />
                 </View>
-
-                <View style={styles.profileInfo}>
-                    <Text style={styles.name}>
-                        Cliente Fast
-                    </Text>
-
-                    <Text style={styles.email}>
-                        {email}
-                    </Text>
-                </View>
-            </View>
-
-            <View style={styles.menu}>
-                <MenuItem
-                    icon="receipt-outline"
-                    title="Meus pedidos"
-                    onPress={showComingSoon}
-                />
-
-                <MenuItem
-                    icon="location-outline"
-                    title="Endereços"
-                    onPress={showComingSoon}
-                />
-
-                <MenuItem
-                    icon="card-outline"
-                    title="Formas de pagamento"
-                    onPress={showComingSoon}
-                />
-
-                <MenuItem
-                    icon="settings-outline"
-                    title="Configurações"
-                    onPress={showComingSoon}
-                />
-
-                <MenuItem
-                    icon="log-out-outline"
-                    title="Sair"
-                    danger
-                    onPress={handleLogout}
-                />
-            </View>
-        </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
@@ -181,18 +173,13 @@ function MenuItem({
             <Ionicons
                 name={icon}
                 size={23}
-                color={
-                    danger
-                        ? colors.danger
-                        : colors.grayDark
-                }
+                color={danger ? colors.danger : colors.grayDark}
             />
 
             <Text
                 style={[
                     styles.menuText,
-                    danger &&
-                    styles.menuTextDanger,
+                    danger && styles.menuTextDanger,
                 ]}
             >
                 {title}
@@ -212,8 +199,12 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.cream,
+    },
+
+    scrollContent: {
         padding: spacing.lg,
-        paddingTop: spacing.xl,
+        paddingTop: spacing.sm,
+        paddingBottom: spacing.xxl,
     },
 
     title: {
@@ -229,6 +220,11 @@ const styles = StyleSheet.create({
         marginTop: spacing.lg,
         flexDirection: "row",
         alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 2,
     },
 
     avatar: {
@@ -242,6 +238,7 @@ const styles = StyleSheet.create({
 
     profileInfo: {
         marginLeft: spacing.md,
+        flex: 1,
     },
 
     name: {
@@ -253,6 +250,7 @@ const styles = StyleSheet.create({
     email: {
         color: colors.grayDark,
         marginTop: 4,
+        fontSize: 14,
     },
 
     menu: {
@@ -260,6 +258,11 @@ const styles = StyleSheet.create({
         borderRadius: radius.xl,
         marginTop: spacing.lg,
         overflow: "hidden",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 2,
     },
 
     menuItem: {
@@ -268,8 +271,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         borderBottomWidth: 1,
-        borderBottomColor:
-            colors.grayLight,
+        borderBottomColor: colors.grayLight,
     },
 
     menuText: {

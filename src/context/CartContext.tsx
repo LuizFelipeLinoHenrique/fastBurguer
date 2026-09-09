@@ -12,7 +12,7 @@ import { CartItem, Product } from "../types";
 
 type CartContextData = {
     items: CartItem[];
-    addToCart: (product: Product) => void;
+    addToCart: (product: Product, quantity?: number) => void;
     removeFromCart: (productId: string) => void;
     increaseQuantity: (productId: string) => void;
     decreaseQuantity: (productId: string) => void;
@@ -44,6 +44,9 @@ export function CartProvider({ children }: CartProviderProps) {
                     const parsedCart = JSON.parse(storedCart) as CartItem[];
                     setItems(parsedCart);
                 }
+            } catch {
+                // If parsing fails, start with empty cart
+                setItems([]);
             } finally {
                 setLoaded(true);
             }
@@ -57,10 +60,18 @@ export function CartProvider({ children }: CartProviderProps) {
             return;
         }
 
-        AsyncStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+        AsyncStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items)).catch(
+            () => {
+                // Handle or ignore storage write failure
+            },
+        );
     }, [items, loaded]);
 
-    function addToCart(product: Product) {
+    function addToCart(product: Product, quantity = 1) {
+        if (quantity <= 0) {
+            return;
+        }
+
         setItems((currentItems) => {
             const existingItem = currentItems.find(
                 (item) => item.product.id === product.id,
@@ -71,7 +82,7 @@ export function CartProvider({ children }: CartProviderProps) {
                     item.product.id === product.id
                         ? {
                             ...item,
-                            quantity: item.quantity + 1,
+                            quantity: item.quantity + quantity,
                         }
                         : item,
                 );
@@ -81,7 +92,7 @@ export function CartProvider({ children }: CartProviderProps) {
                 ...currentItems,
                 {
                     product,
-                    quantity: 1,
+                    quantity,
                 },
             ];
         });

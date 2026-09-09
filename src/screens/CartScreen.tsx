@@ -1,15 +1,17 @@
 import {
     FlatList,
+    Image,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { useCart } from "../context/CartoonContext";
+import { useCart } from "../context/CartContext";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import {
     colors,
@@ -23,9 +25,8 @@ type Props = NativeStackScreenProps<
     "Cart"
 >;
 
-export function CartScreen({
-    navigation,
-}: Props) {
+export function CartScreen({ navigation }: Props) {
+    const insets = useSafeAreaInsets();
     const {
         items,
         increaseQuantity,
@@ -42,9 +43,15 @@ export function CartScreen({
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
+            <View
+                style={[
+                    styles.header,
+                    { paddingTop: Math.max(insets.top + 8, 24) },
+                ]}
+            >
                 <TouchableOpacity
                     onPress={() => navigation.goBack()}
+                    activeOpacity={0.7}
                 >
                     <Ionicons
                         name="arrow-back"
@@ -53,22 +60,16 @@ export function CartScreen({
                     />
                 </TouchableOpacity>
 
-                <Text style={styles.title}>
-                    Carrinho
-                </Text>
+                <Text style={styles.title}>Carrinho</Text>
 
                 <View style={styles.placeholder} />
             </View>
 
             {items.length === 0 ? (
                 <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyEmoji}>
-                        🛒
-                    </Text>
+                    <Text style={styles.emptyEmoji}>🛒</Text>
 
-                    <Text style={styles.emptyTitle}>
-                        Seu carrinho está vazio
-                    </Text>
+                    <Text style={styles.emptyTitle}>Seu carrinho está vazio</Text>
 
                     <Text style={styles.emptyText}>
                         Adicione alguns produtos deliciosos!
@@ -77,30 +78,31 @@ export function CartScreen({
                     <TouchableOpacity
                         style={styles.emptyButton}
                         onPress={() =>
-                            navigation.navigate("MainTabs")
+                            navigation.navigate("MainTabs", {
+                                screen: "Products",
+                            })
                         }
                     >
-                        <Text style={styles.emptyButtonText}>
-                            Ver cardápio
-                        </Text>
+                        <Text style={styles.emptyButtonText}>Ver cardápio</Text>
                     </TouchableOpacity>
                 </View>
             ) : (
                 <>
                     <FlatList
                         data={items}
-                        keyExtractor={(item) =>
-                            item.product.id
-                        }
-                        contentContainerStyle={
-                            styles.listContent
-                        }
+                        keyExtractor={(item) => item.product.id}
+                        contentContainerStyle={styles.listContent}
                         showsVerticalScrollIndicator={false}
                         renderItem={({ item }) => (
                             <View style={styles.item}>
-                                <Text style={styles.itemEmoji}>
-                                    🍔
-                                </Text>
+                                {item.product.image ? (
+                                    <Image
+                                        source={{ uri: item.product.image }}
+                                        style={styles.itemImage}
+                                    />
+                                ) : (
+                                    <Text style={styles.itemEmoji}>🍔</Text>
+                                )}
 
                                 <View style={styles.itemInfo}>
                                     <Text style={styles.itemName}>
@@ -148,7 +150,7 @@ export function CartScreen({
                                     <Text style={styles.itemTotal}>
                                         {money(
                                             item.product.price *
-                                            item.quantity,
+                                                item.quantity,
                                         )}
                                     </Text>
 
@@ -158,6 +160,12 @@ export function CartScreen({
                                                 item.product.id,
                                             )
                                         }
+                                        hitSlop={{
+                                            top: 10,
+                                            bottom: 10,
+                                            left: 10,
+                                            right: 10,
+                                        }}
                                     >
                                         <Ionicons
                                             name="trash-outline"
@@ -170,22 +178,26 @@ export function CartScreen({
                         )}
                     />
 
-                    <View style={styles.summary}>
+                    <View
+                        style={[
+                            styles.summary,
+                            {
+                                paddingBottom: Math.max(
+                                    insets.bottom + spacing.md,
+                                    spacing.lg,
+                                ),
+                            },
+                        ]}
+                    >
                         <View style={styles.summaryRow}>
-                            <Text style={styles.summaryLabel}>
-                                Subtotal
-                            </Text>
-
+                            <Text style={styles.summaryLabel}>Subtotal</Text>
                             <Text style={styles.summaryValue}>
                                 {money(subtotal)}
                             </Text>
                         </View>
 
                         <View style={styles.summaryRow}>
-                            <Text style={styles.summaryLabel}>
-                                Frete
-                            </Text>
-
+                            <Text style={styles.summaryLabel}>Frete</Text>
                             <Text style={styles.summaryValue}>
                                 {money(shipping)}
                             </Text>
@@ -194,10 +206,7 @@ export function CartScreen({
                         <View style={styles.divider} />
 
                         <View style={styles.summaryRow}>
-                            <Text style={styles.totalLabel}>
-                                Total
-                            </Text>
-
+                            <Text style={styles.totalLabel}>Total</Text>
                             <Text style={styles.totalValue}>
                                 {money(total)}
                             </Text>
@@ -205,9 +214,7 @@ export function CartScreen({
 
                         <TouchableOpacity
                             style={styles.checkoutButton}
-                            onPress={() =>
-                                navigation.navigate("Checkout")
-                            }
+                            onPress={() => navigation.navigate("Checkout")}
                             activeOpacity={0.8}
                         >
                             <Text style={styles.checkoutText}>
@@ -228,9 +235,9 @@ const styles = StyleSheet.create({
     },
 
     header: {
-        height: 90,
+        minHeight: 60,
         paddingHorizontal: spacing.md,
-        paddingTop: 35,
+        paddingBottom: spacing.sm,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
@@ -258,6 +265,13 @@ const styles = StyleSheet.create({
         marginBottom: spacing.sm,
         flexDirection: "row",
         alignItems: "center",
+    },
+
+    itemImage: {
+        width: 60,
+        height: 60,
+        borderRadius: radius.md,
+        backgroundColor: colors.grayLight,
     },
 
     itemEmoji: {
@@ -334,6 +348,11 @@ const styles = StyleSheet.create({
         padding: spacing.lg,
         borderTopLeftRadius: radius.xl,
         borderTopRightRadius: radius.xl,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 6,
     },
 
     summaryRow: {

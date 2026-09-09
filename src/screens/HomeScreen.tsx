@@ -1,154 +1,137 @@
 import {
     FlatList,
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import {
-    CompositeScreenProps,
-} from "@react-navigation/native";
-
-import {
-    BottomTabScreenProps,
-} from "@react-navigation/bottom-tabs";
-
-import {
-    NativeStackScreenProps,
-} from "@react-navigation/native-stack";
+import { CompositeScreenProps } from "@react-navigation/native";
+import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { CartButton } from "../components/CartButton";
 import { ProductCard } from "../components/ProductCard";
 import { products } from "../data/products";
+import { MainTabsParamList } from "../navigation/MainTabs";
+import { RootStackParamList } from "../navigation/RootNavigator";
+import { colors, fontSize, radius, spacing } from "../theme";
 
-import {
-    MainTabsParamList,
-} from "../navigation/MainTabs";
+type HomeScreenProps = CompositeScreenProps<
+    BottomTabScreenProps<MainTabsParamList, "Home">,
+    NativeStackScreenProps<RootStackParamList>
+>;
 
-import {
-    RootStackParamList,
-} from "../navigation/RootNavigator";
-
-import {
-    colors,
-    fontSize,
-    radius,
-    spacing,
-} from "../theme";
-
-type HomeScreenProps =
-    CompositeScreenProps<
-        BottomTabScreenProps<
-            MainTabsParamList,
-            "Home"
-        >,
-        NativeStackScreenProps<RootStackParamList>
-    >;
-
-export function HomeScreen({
-    navigation,
-}: HomeScreenProps) {
-    const highlights = products.slice(0, 4);
+export function HomeScreen({ navigation }: HomeScreenProps) {
+    const highlights = products.slice(0, 3);
+    const popularItems = products.slice(3, 7);
 
     return (
-        <View style={styles.container}>
-            <FlatList
-                data={highlights}
-                keyExtractor={(item) => item.id}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={
-                    styles.horizontalList
-                }
-                ListHeaderComponent={
+        <SafeAreaView style={styles.container} edges={["top"]}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+            >
+                {/* Header */}
+                <View style={styles.header}>
                     <View>
-                        <View style={styles.header}>
-                            <View>
-                                <Text style={styles.greeting}>
-                                    Olá! 👋
-                                </Text>
+                        <Text style={styles.greeting}>Olá! 👋</Text>
+                        <Text style={styles.welcome}>O que vamos pedir hoje?</Text>
+                    </View>
 
-                                <Text style={styles.welcome}>
-                                    O que vamos pedir hoje?
-                                </Text>
-                            </View>
+                    <CartButton onPress={() => navigation.navigate("Cart")} />
+                </View>
 
-                            <CartButton
+                {/* Banner */}
+                <TouchableOpacity
+                    style={styles.banner}
+                    activeOpacity={0.9}
+                    onPress={() =>
+                        navigation.navigate("MainTabs", {
+                            screen: "Products",
+                        })
+                    }
+                >
+                    <View style={styles.bannerText}>
+                        <Text style={styles.bannerSmall}>OFERTA ESPECIAL</Text>
+                        <Text style={styles.bannerTitle}>Combo Fast</Text>
+                        <Text style={styles.bannerDescription}>
+                            Hambúrguer + batata + bebida
+                        </Text>
+                        <Text style={styles.bannerPrice}>
+                            A partir de R$ 34,90
+                        </Text>
+                    </View>
+
+                    <Text style={styles.bannerEmoji}>🍔</Text>
+                </TouchableOpacity>
+
+                {/* Destaques */}
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Destaques</Text>
+                    <TouchableOpacity
+                        onPress={() =>
+                            navigation.navigate("MainTabs", {
+                                screen: "Products",
+                            })
+                        }
+                    >
+                        <Text style={styles.seeAll}>Ver cardápio</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <FlatList
+                    horizontal
+                    data={highlights}
+                    keyExtractor={(item) => item.id}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.horizontalList}
+                    renderItem={({ item }) => (
+                        <View style={styles.productWrapper}>
+                            <ProductCard
+                                product={item}
                                 onPress={() =>
-                                    navigation.navigate("Cart")
+                                    navigation.navigate("ProductDetail", {
+                                        productId: item.id,
+                                    })
                                 }
                             />
                         </View>
+                    )}
+                />
 
-                        <View style={styles.banner}>
-                            <View style={styles.bannerText}>
-                                <Text style={styles.bannerSmall}>
-                                    OFERTA ESPECIAL
-                                </Text>
+                {/* Mais Pedidos */}
+                <View style={[styles.sectionHeader, styles.secondSection]}>
+                    <Text style={styles.sectionTitle}>Mais Pedidos</Text>
+                    <TouchableOpacity
+                        onPress={() =>
+                            navigation.navigate("MainTabs", {
+                                screen: "Products",
+                            })
+                        }
+                    >
+                        <Text style={styles.seeAll}>Ver todos</Text>
+                    </TouchableOpacity>
+                </View>
 
-                                <Text style={styles.bannerTitle}>
-                                    Combo Fast
-                                </Text>
-
-                                <Text
-                                    style={styles.bannerDescription}
-                                >
-                                    Hambúrguer + batata + bebida
-                                </Text>
-
-                                <Text style={styles.bannerPrice}>
-                                    A partir de R$ 34,90
-                                </Text>
-                            </View>
-
-                            <Text style={styles.bannerEmoji}>
-                                🍔
-                            </Text>
-                        </View>
-
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>
-                                Destaques
-                            </Text>
-
-                            <TouchableOpacity
+                <View style={styles.popularGrid}>
+                    {popularItems.map((item) => (
+                        <View key={item.id} style={styles.gridItem}>
+                            <ProductCard
+                                product={item}
                                 onPress={() =>
-                                    navigation.navigate(
-                                        "MainTabs",
-                                        {
-                                            screen: "Products",
-                                        },
-                                    )
-                                }
-                            >
-                                <Text style={styles.seeAll}>
-                                    Ver cardápio
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                }
-                renderItem={({ item }) => (
-                    <View style={styles.productWrapper}>
-                        <ProductCard
-                            product={item}
-                            onPress={() =>
-                                navigation.navigate(
-                                    "ProductDetail",
-                                    {
+                                    navigation.navigate("ProductDetail", {
                                         productId: item.id,
-                                    },
-                                )
-                            }
-                        />
-                    </View>
-                )}
-                ListFooterComponent={
-                    <View style={styles.bottomSpace} />
-                }
-            />
-        </View>
+                                    })
+                                }
+                            />
+                        </View>
+                    ))}
+                </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
@@ -158,12 +141,13 @@ const styles = StyleSheet.create({
         backgroundColor: colors.cream,
     },
 
-    horizontalList: {
-        paddingHorizontal: spacing.md,
-        paddingTop: spacing.lg,
+    scrollContent: {
+        paddingTop: spacing.md,
+        paddingBottom: spacing.xxl,
     },
 
     header: {
+        paddingHorizontal: spacing.md,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
@@ -183,6 +167,7 @@ const styles = StyleSheet.create({
     },
 
     banner: {
+        marginHorizontal: spacing.md,
         backgroundColor: colors.primary,
         minHeight: 175,
         borderRadius: radius.xl,
@@ -230,10 +215,15 @@ const styles = StyleSheet.create({
     },
 
     sectionHeader: {
+        paddingHorizontal: spacing.md,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
         marginBottom: spacing.sm,
+    },
+
+    secondSection: {
+        marginTop: spacing.lg,
     },
 
     sectionTitle: {
@@ -248,11 +238,21 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
 
+    horizontalList: {
+        paddingHorizontal: spacing.sm,
+    },
+
     productWrapper: {
         width: 230,
     },
 
-    bottomSpace: {
-        width: spacing.md,
+    popularGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        paddingHorizontal: spacing.sm,
+    },
+
+    gridItem: {
+        width: "50%",
     },
 });

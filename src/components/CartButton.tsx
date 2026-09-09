@@ -6,7 +6,7 @@ import {
     View,
 } from "react-native";
 
-import { useCart } from "../context/CartoonContext";
+import { useCart } from "../context/CartContext";
 import { colors, radius } from "../theme";
 
 type CartButtonProps = {

@@ -5,81 +5,55 @@ import {
     Text,
     View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import {
-    CompositeScreenProps,
-} from "@react-navigation/native";
+import { CompositeScreenProps } from "@react-navigation/native";
+import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import {
-    BottomTabScreenProps,
-} from "@react-navigation/bottom-tabs";
-
-import {
-    NativeStackScreenProps,
-} from "@react-navigation/native-stack";
-
+import { CartButton } from "../components/CartButton";
 import { CategoryPill } from "../components/CategoryPill";
 import { ProductCard } from "../components/ProductCard";
 import { products } from "../data/products";
-
-import {
-    MainTabsParamList,
-} from "../navigation/MainTabs";
-
-import {
-    RootStackParamList,
-} from "../navigation/RootNavigator";
-
-import {
-    colors,
-    fontSize,
-    spacing,
-} from "../theme";
-
+import { MainTabsParamList } from "../navigation/MainTabs";
+import { RootStackParamList } from "../navigation/RootNavigator";
+import { colors, fontSize, spacing } from "../theme";
 import { Category } from "../types";
 
-type ProductsScreenProps =
-    CompositeScreenProps<
-        BottomTabScreenProps<
-            MainTabsParamList,
-            "Products"
-        >,
-        NativeStackScreenProps<RootStackParamList>
-    >;
+type ProductsScreenProps = CompositeScreenProps<
+    BottomTabScreenProps<MainTabsParamList, "Products">,
+    NativeStackScreenProps<RootStackParamList>
+>;
 
-type FilterCategory =
-    | Category
-    | "todos";
+type FilterCategory = Category | "todos";
 
 const categories: {
     value: FilterCategory;
     label: string;
 }[] = [
-        {
-            value: "todos",
-            label: "Todos",
-        },
-        {
-            value: "burgers",
-            label: "Burgers",
-        },
-        {
-            value: "acompanhamentos",
-            label: "Acompanhamentos",
-        },
-        {
-            value: "bebidas",
-            label: "Bebidas",
-        },
-        {
-            value: "sobremesas",
-            label: "Sobremesas",
-        },
-    ];
+    {
+        value: "todos",
+        label: "Todos",
+    },
+    {
+        value: "burgers",
+        label: "Burgers",
+    },
+    {
+        value: "acompanhamentos",
+        label: "Acompanhamentos",
+    },
+    {
+        value: "bebidas",
+        label: "Bebidas",
+    },
+    {
+        value: "sobremesas",
+        label: "Sobremesas",
+    },
+];
 
-export function ProductsScreen({
-    navigation,
-}: ProductsScreenProps) {
+export function ProductsScreen({ navigation }: ProductsScreenProps) {
     const [selectedCategory, setSelectedCategory] =
         useState<FilterCategory>("todos");
 
@@ -89,79 +63,62 @@ export function ProductsScreen({
         }
 
         return products.filter(
-            (product) =>
-                product.category ===
-                selectedCategory,
+            (product) => product.category === selectedCategory,
         );
     }, [selectedCategory]);
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>
-                Cardápio
-            </Text>
+        <SafeAreaView style={styles.container} edges={["top"]}>
+            <View style={styles.header}>
+                <View>
+                    <Text style={styles.title}>Cardápio</Text>
+                    <Text style={styles.subtitle}>Escolha seus favoritos</Text>
+                </View>
 
-            <Text style={styles.subtitle}>
-                Escolha seus favoritos
-            </Text>
+                <CartButton onPress={() => navigation.navigate("Cart")} />
+            </View>
 
-            <FlatList
-                horizontal
-                data={categories}
-                keyExtractor={(item) => item.value}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={
-                    styles.categories
-                }
-                renderItem={({ item }) => (
-                    <CategoryPill
-                        category={item.value}
-                        label={item.label}
-                        selected={
-                            selectedCategory ===
-                            item.value
-                        }
-                        onPress={() =>
-                            setSelectedCategory(
-                                item.value,
-                            )
-                        }
-                    />
-                )}
-            />
+            <View style={styles.categoriesContainer}>
+                <FlatList
+                    horizontal
+                    data={categories}
+                    keyExtractor={(item) => item.value}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.categories}
+                    renderItem={({ item }) => (
+                        <CategoryPill
+                            category={item.value}
+                            label={item.label}
+                            selected={selectedCategory === item.value}
+                            onPress={() => setSelectedCategory(item.value)}
+                        />
+                    )}
+                />
+            </View>
 
             <FlatList
                 data={filteredProducts}
                 keyExtractor={(item) => item.id}
                 numColumns={2}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={
-                    styles.products
-                }
+                contentContainerStyle={styles.products}
                 renderItem={({ item }) => (
-                    <View
-                        style={styles.productContainer}
-                    >
+                    <View style={styles.productContainer}>
                         <ProductCard
                             product={item}
                             onPress={() =>
-                                navigation.navigate(
-                                    "ProductDetail",
-                                    {
-                                        productId: item.id,
-                                    },
-                                )
+                                navigation.navigate("ProductDetail", {
+                                    productId: item.id,
+                                })
                             }
                         />
                     </View>
                 )}
                 ListEmptyComponent={
-                    <Text style={styles.empty}>
-                        Nenhum produto encontrado.
-                    </Text>
+                    <Text style={styles.empty}>Nenhum produto encontrado.</Text>
                 }
             />
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -169,26 +126,36 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.cream,
-        paddingTop: spacing.lg,
+    },
+
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: spacing.md,
+        paddingTop: spacing.sm,
+        paddingBottom: spacing.xs,
     },
 
     title: {
         fontSize: fontSize.title,
         color: colors.black,
         fontWeight: "900",
-        paddingHorizontal: spacing.md,
     },
 
     subtitle: {
         color: colors.grayDark,
         fontSize: fontSize.md,
-        paddingHorizontal: spacing.md,
-        marginTop: spacing.xs,
+        marginTop: 2,
+    },
+
+    categoriesContainer: {
+        marginVertical: spacing.sm,
     },
 
     categories: {
         paddingHorizontal: spacing.md,
-        paddingVertical: spacing.lg,
+        paddingVertical: spacing.xs,
     },
 
     products: {

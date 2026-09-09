@@ -11,7 +11,13 @@ import {
     View,
 } from "react-native";
 
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { CompositeScreenProps } from "@react-navigation/native";
+import {
+    NativeStackNavigationProp,
+    NativeStackScreenProps,
+} from "@react-navigation/native-stack";
+
+import { AuthStackParamList } from "../navigation/AuthNavigator";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import {
     colors,
@@ -20,9 +26,9 @@ import {
     spacing,
 } from "../theme";
 
-type Props = NativeStackScreenProps<
-    RootStackParamList,
-    "Auth"
+type Props = CompositeScreenProps<
+    NativeStackScreenProps<AuthStackParamList, "Login">,
+    NativeStackScreenProps<RootStackParamList>
 >;
 
 const SESSION_KEY = "@fastburguer_session";
@@ -70,7 +76,19 @@ export function LoginScreen({ navigation }: Props) {
 
             setLoading(false);
 
-            navigation.replace("MainTabs");
+            const rootNav =
+                navigation.getParent<
+                    NativeStackNavigationProp<RootStackParamList>
+                >();
+
+            if (rootNav) {
+                rootNav.reset({
+                    index: 0,
+                    routes: [{ name: "MainTabs" }],
+                });
+            } else {
+                navigation.navigate("MainTabs");
+            }
         }, 700);
     }
 
