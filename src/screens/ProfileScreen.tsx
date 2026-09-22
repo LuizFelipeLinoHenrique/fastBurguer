@@ -10,8 +10,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { CompositeScreenProps } from "@react-navigation/native";
 import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
+import { CompositeScreenProps } from "@react-navigation/native";
 import {
     NativeStackNavigationProp,
     NativeStackScreenProps,
@@ -121,7 +121,8 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
                         onPress={() => navigation.navigate("Orders")}
                     />
 
-                    <MenuItem
+                    {/* Funções futuras */}
+                    {/* <MenuItem
                         icon="location-outline"
                         title="Endereços"
                         onPress={() => showComingSoon("Endereços")}
@@ -137,7 +138,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
                         icon="settings-outline"
                         title="Configurações"
                         onPress={() => showComingSoon("Configurações")}
-                    />
+                    /> */}
 
                     <MenuItem
                         icon="log-out-outline"

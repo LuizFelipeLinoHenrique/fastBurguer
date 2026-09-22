@@ -8,8 +8,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { CompositeScreenProps } from "@react-navigation/native";
 import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
+import { CompositeScreenProps } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { CartButton } from "../components/CartButton";
@@ -37,7 +37,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
                 {/* Header */}
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.greeting}>Olá! 👋</Text>
+                        <Text style={styles.greeting}>Olá!</Text>
                         <Text style={styles.welcome}>O que vamos pedir hoje?</Text>
                     </View>
 
@@ -45,7 +45,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
                 </View>
 
                 {/* Banner */}
-                <TouchableOpacity
+                {/* <TouchableOpacity
                     style={styles.banner}
                     activeOpacity={0.9}
                     onPress={() =>
@@ -66,7 +66,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
                     </View>
 
                     <Text style={styles.bannerEmoji}>🍔</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
                 {/* Destaques */}
                 <View style={styles.sectionHeader}>
@@ -104,7 +104,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
 
                 {/* Mais Pedidos */}
                 <View style={[styles.sectionHeader, styles.secondSection]}>
-                    <Text style={styles.sectionTitle}>Mais Pedidos</Text>
+                    <Text style={styles.sectionTitle}>Outros itens</Text>
                     <TouchableOpacity
                         onPress={() =>
                             navigation.navigate("MainTabs", {

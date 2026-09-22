@@ -9,7 +9,7 @@ import {
 
 import { Order, OrderStatus } from "../types";
 
-export const ORDER_PREPARATION_TIME_MS = 2 * 60 * 1000; // 2 minutes (120,000 ms)
+export const ORDER_PREPARATION_TIME_MS = 2 * 60 * 1000;
 
 type CreateOrderData = Omit<Order, "id" | "status">;
 
@@ -59,7 +59,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
         }
 
         AsyncStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders)).catch(
-            () => {},
+            () => { },
         );
     }, [orders, loaded]);
 
